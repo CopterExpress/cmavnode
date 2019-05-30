@@ -159,6 +159,17 @@ bool should_forward_message(mavlink_message_t &msg, std::shared_ptr<mlink> *inco
     // Sleep mode enabled for this link and the link is sleeping
     if (((*outgoing_link)->info.sleep_enabled) && ((*outgoing_link)->sleep))
         return false;
+        
+    // Filter is presented
+    if ((*outgoing_link)->info.filter_type != link_filter_type::NONE)
+    {
+        // The current message type is in the filter messages set
+        bool message_found = (*outgoing_link)->info.filter_messages.find(msg.msgid) != (*outgoing_link)->info.filter_messages.end();
+
+        if (message_found && ((*outgoing_link)->info.filter_type == link_filter_type::DROP) ||
+                (!message_found && ((*outgoing_link)->info.filter_type == link_filter_type::ACCEPT)))
+            return false;
+    }
 
     // Don't forward SiK radio info
     if ((*incoming_link)->info.SiK_radio && msg.sysid == 51)
